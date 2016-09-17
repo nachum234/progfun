@@ -55,7 +55,7 @@ abstract class TweetSet {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def union(that: TweetSet): TweetSet
+  def union(that: TweetSet): TweetSet = filterAcc(tw => true, that)
 
   /**
    * Returns the tweet from this set which has the greatest retweet count.
@@ -118,8 +118,6 @@ class Empty extends TweetSet {
 
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
 
-  def union(that: TweetSet): TweetSet = that
-
   def mostRetweeted: Tweet = throw new NoSuchElementException
 
   /**
@@ -139,25 +137,20 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
   def isEmpty = false
 
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = {
-    if (p(elem)) this.left.filterAcc(p, acc.incl(elem))
-    else this.left.filterAcc(p, acc)
-    if (p(elem)) this.right.filterAcc(p, acc.incl(elem))
-    else this.right.filterAcc(p, acc)
-  }
-
-  def union(that: TweetSet): TweetSet =
-    left.union(right).union(that).incl(elem)
+		if( p(elem) ) left.filterAcc(p, right.filterAcc(p, acc.incl(elem)))
+		else left.filterAcc(p, right.filterAcc(p, acc))
+	}
 
   def mostRetweeted: Tweet = {
-    def moreRetweeted(tweet1: Tweet, tweet2: Tweet): Tweet =
-      if (tweet1.retweets > tweet2.retweets) tweet1
-      else tweet2
-
-    if (!left.isEmpty) moreRetweeted(elem, left.mostRetweeted)
-    else if (!right.isEmpty) moreRetweeted(elem, right.mostRetweeted)
-    else elem
+    def maxTweet(a: Tweet, b: Tweet) =
+      if (a.retweets > b.retweets) a
+      else b
+    
+    if (left.isEmpty && right.isEmpty) elem
+    else if (left.isEmpty) maxTweet(right.mostRetweeted, elem)
+    else if (right.isEmpty) maxTweet(left.mostRetweeted, elem)
+    else maxTweet(maxTweet(left.mostRetweeted, elem), right.mostRetweeted)
   }
-
   /**
    * The following methods are already implemented
    */
@@ -217,7 +210,7 @@ object GoogleVsApple {
    * A list of all tweets mentioning a keyword from either apple or google,
    * sorted by the number of retweets.
    */
-  lazy val trending: TweetList = googleTweets.union(appleTweets).descendingByRetweet
+  lazy val trending: TweetList = (googleTweets.union(appleTweets)).descendingByRetweet
 }
 
 object Main extends App {
