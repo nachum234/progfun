@@ -24,4 +24,13 @@ object List extends List[T] {
 
 object test {
   val x: List[String] = Nil
+  def isort(xs: List[int]): List[int] = xs match {
+    case list() => List()
+    case y :: ys => insert(y, isort(ys))
+  }
+
+  def insert(x, xs: List[int]): List[int] = xs match {
+    case list() => List(x)
+    case y :: ys => if (x <= y) x :: xs else insert(x, ys)
+  }
 }
